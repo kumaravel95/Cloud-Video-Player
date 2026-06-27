@@ -18,13 +18,17 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.AppCompat.NoActionBar"
-        android:banner="@drawable/ic_banner">
+        android:banner="@drawable/ic_banner"
+        android:logo="@drawable/ic_banner">
         
         <activity
             android:name=".MainActivity"
             android:exported="true"
             android:theme="@style/Theme.AppCompat.NoActionBar"
-            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout">
+            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout"
+            android:banner="@drawable/ic_banner"
+            android:logo="@drawable/ic_banner"
+            android:icon="@mipmap/ic_launcher">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />

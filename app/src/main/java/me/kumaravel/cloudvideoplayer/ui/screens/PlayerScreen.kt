@@ -25,9 +25,7 @@ import androidx.media3.ui.PlayerView
 fun PlayerScreen(videoUrl: String, onBack: () -> Unit) {
     val context = LocalContext.current
 
-    // Create a reference to hold the PlayerView
-    var playerViewRef by remember { mutableStateOf<PlayerView?>(null) }
-
+    // Use remember for the player to ensure it's not recreated on every recomposition
     val exoPlayer = remember {
         ExoPlayer.Builder(context).build().apply {
             val mediaItem = MediaItem.fromUri(videoUrl)
@@ -37,46 +35,65 @@ fun PlayerScreen(videoUrl: String, onBack: () -> Unit) {
         }
     }
 
+    // Reference to the PlayerView to call showController()
+    var playerViewInstance by remember { mutableStateOf<PlayerView?>(null) }
+
     DisposableEffect(Unit) {
         onDispose {
             exoPlayer.release()
         }
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .focusable() // Makes the Box focusable to catch events
+    ) {
         AndroidView(
             factory = { ctx ->
                 PlayerView(ctx).apply {
                     player = exoPlayer
                     useController = true
-                    keepScreenOn = true
+
+                    // 1. FIX RESOLUTION BACKGROUND (Set to Black)
                     setBackgroundColor(android.graphics.Color.BLACK)
                     setShutterBackgroundColor(android.graphics.Color.BLACK)
 
-                    focusable = View.FOCUSABLE
+                    // 2. STABLE FOCUS HANDLING
+                    // Use Boolean setters instead of View.FOCUSABLE constants
+                    isFocusable = true
                     isFocusableInTouchMode = true
+                    // Allow focus to pass to media controls' buttons
                     descendantFocusability = ViewGroup.FOCUS_AFTER_DESCENDANTS
 
+                    // 3. PREVENT SCREENSAVER
+                    keepScreenOn = true
+
                     controllerShowTimeoutMs = 5000
+
                     layoutParams = FrameLayout.LayoutParams(
                         ViewGroup.LayoutParams.MATCH_PARENT,
                         ViewGroup.LayoutParams.MATCH_PARENT
                     )
-                }.also {
-                    // Store the reference when the view is created
-                    playerViewRef = it
-                }
+                }.also { playerViewInstance = it }
+            },
+            update = { view ->
+                // Ensure the view requests focus once attached
+                view.requestFocus()
             },
             modifier = Modifier
                 .fillMaxSize()
                 .onKeyEvent { keyEvent ->
+                    // 4. REMOTE CONTROL FIX
+                    // Fire TV Remotes send ACTION_DOWN.
+                    // We catch any button press to wake up the controls.
                     if (keyEvent.nativeKeyEvent.action == KeyEvent.ACTION_DOWN) {
-                        // Use the stored reference instead of 'it'
-                        playerViewRef?.showController()
+                        playerViewInstance?.showController()
                     }
+                    // Return false so the key event still passes through to the player
+                    // (allowing play/pause/seek to work via the native controller)
                     false
                 }
-                .focusable()
         )
     }
 }

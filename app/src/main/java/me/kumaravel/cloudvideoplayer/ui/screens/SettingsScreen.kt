@@ -1,4 +1,4 @@
-import kotlinx.coroutines.launch
+import android.content.pm.PackageManager
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -14,14 +14,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
-import androidx.tv.material3.Button
-import androidx.tv.material3.ExperimentalTvMaterial3Api
-import androidx.tv.material3.MaterialTheme
-import androidx.tv.material3.Text
+import androidx.compose.ui.platform.LocalContext
+import kotlinx.coroutines.launch
 import me.kumaravel.cloudvideoplayer.util.SettingsManager
 
-
-@OptIn(ExperimentalTvMaterial3Api::class)
 @Composable
 fun SettingsScreen(
     settingsManager: SettingsManager,
@@ -31,6 +27,9 @@ fun SettingsScreen(
     var textState by remember(currentUrl) { mutableStateOf(currentUrl) }
     val scope = rememberCoroutineScope()
 
+    val context = LocalContext.current
+    val isTv = remember { context.packageManager.hasSystemFeature(PackageManager.FEATURE_LEANBACK) }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -38,7 +37,11 @@ fun SettingsScreen(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text("Configuration URL", style = MaterialTheme.typography.headlineMedium)
+        if (isTv) {
+            androidx.tv.material3.Text("Configuration URL", style = androidx.tv.material3.MaterialTheme.typography.headlineMedium)
+        } else {
+            androidx.compose.material3.Text("Configuration URL", style = androidx.compose.material3.MaterialTheme.typography.headlineMedium)
+        }
 
         androidx.compose.material3.OutlinedTextField(
             value = textState,
@@ -46,16 +49,33 @@ fun SettingsScreen(
             modifier = Modifier
                 .fillMaxWidth(0.8f)
                 .padding(16.dp),
-            label = { Text("Enter JSON URL") }
+            label = {
+                if (isTv) {
+                    androidx.tv.material3.Text("Enter JSON URL")
+                } else {
+                    androidx.compose.material3.Text("Enter JSON URL")
+                }
+            }
         )
 
-        Button(onClick = {
-            scope.launch {
-                settingsManager.saveConfigUrl(textState)
-                onBack()
+        if (isTv) {
+            androidx.tv.material3.Button(onClick = {
+                scope.launch {
+                    settingsManager.saveConfigUrl(textState)
+                    onBack()
+                }
+            }) {
+                androidx.tv.material3.Text("Save and Reload")
             }
-        }) {
-            Text("Save and Reload")
+        } else {
+            androidx.compose.material3.Button(onClick = {
+                scope.launch {
+                    settingsManager.saveConfigUrl(textState)
+                    onBack()
+                }
+            }) {
+                androidx.compose.material3.Text("Save and Reload")
+            }
         }
     }
 }
